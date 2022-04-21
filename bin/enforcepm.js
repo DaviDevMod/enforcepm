@@ -12,8 +12,7 @@ const chosenPM = process.argv[2];
 if (lockFiles.hasOwnProperty(chosenPM)) {
     const allowedLock = lockFiles[chosenPM];
     const forbiddenLocks = Object.values(lockFiles).filter((lock) => lock !== allowedLock);
-    const stagedFiles = git(['diff', '--name-only', '--cached']).stdout.split('\n');
-    stagedFiles.pop();
+    const stagedFiles = git(['diff', '--name-only', '--cached']).stdout.trim().split('\n');
     for (let lock of forbiddenLocks) {
         if (stagedFiles.indexOf(lock) !== -1) {
             git(['rm', '-f', lock]);
@@ -27,4 +26,7 @@ if (lockFiles.hasOwnProperty(chosenPM)) {
             console.log(blue, '\t\t~ enforcepm ~', resetColor);
         }
     }
+}
+else {
+    throw new Error(`"${chosenPM}" is not supported by enforcepm.\n\tFor a list of supported package managers, visit https://github.com/DaviDevMod/enforcepm#usage`);
 }

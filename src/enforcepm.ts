@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import cp = require('child_process');
 
-// A map of package managers and relative lock files supported by enforcepm
+// An hash table of the lock files of the supported package managers
 const lockFiles = {
   npm: 'package-lock.json',
   yarn: 'yarn.lock',
@@ -18,12 +18,11 @@ if (lockFiles.hasOwnProperty(chosenPM)) {
 
   const forbiddenLocks = Object.values(lockFiles).filter((lock) => lock !== allowedLock);
 
-  const stagedFiles = git(['diff', '--name-only', '--cached']).stdout.split('\n');
-  stagedFiles.pop(); // pop trailing empty string
+  const stagedFiles = git(['diff', '--name-only', '--cached']).stdout.trim().split('\n');
 
   for (let lock of forbiddenLocks) {
     if (stagedFiles.indexOf(lock) !== -1) {
-      // Remove the staged forbidden lock file
+      // Remove the forbidden lock file
       git(['rm', '-f', lock]);
 
       // Notify
@@ -37,4 +36,8 @@ if (lockFiles.hasOwnProperty(chosenPM)) {
       console.log(blue, '\t\t~ enforcepm ~', resetColor);
     }
   }
+} else {
+  throw new Error(
+    `"${chosenPM}" is not supported by enforcepm.\n\tFor a list of supported package managers, visit https://github.com/DaviDevMod/enforcepm#usage`
+  );
 }
