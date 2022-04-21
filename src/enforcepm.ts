@@ -15,15 +15,16 @@ const chosenPM = process.argv[2];
 
 if (lockFiles.hasOwnProperty(chosenPM)) {
   const allowedLock = lockFiles[chosenPM as keyof typeof lockFiles];
-
   const forbiddenLocks = Object.values(lockFiles).filter((lock) => lock !== allowedLock);
-
   const stagedFiles = git(['diff', '--name-only', '--cached']).stdout.trim().split('\n');
 
   for (let lock of forbiddenLocks) {
-    if (stagedFiles.indexOf(lock) !== -1) {
-      // Remove the forbidden lock file
-      git(['rm', '-f', lock]);
+    // Array of all the staged lock files for a given forbidden package manager.
+    const forbiddenLocksFound = stagedFiles.filter((sf) => sf.endsWith(lock));
+
+    if (forbiddenLocksFound.length) {
+      // Remove the forbidden lock files
+      for (const flf of forbiddenLocksFound) git(['rm', '-f', flf]);
 
       // Notify
       const yellow = '\x1b[1;33m';
@@ -32,7 +33,7 @@ if (lockFiles.hasOwnProperty(chosenPM)) {
       const resetColor = '\x1b[0m';
       const forbiddenPMUsed = Object.keys(lockFiles).find((pm) => lockFiles[pm as keyof typeof lockFiles] === lock);
       console.log(yellow, `WARNING: It looks like you used ${forbiddenPMUsed}. Please remember to use ${chosenPM}.`);
-      console.log(green, `"${lock}" has been deleted prior to commit.`);
+      for (const flf of forbiddenLocksFound) console.log(green, `"${flf}" has been deleted prior to commit.`);
       console.log(blue, '\t\t~ enforcepm ~', resetColor);
     }
   }
